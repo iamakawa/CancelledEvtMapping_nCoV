@@ -58,10 +58,10 @@ latloninfo.addTo(map);
 
 var searchbox = L.control({ position: "topright" });
 searchbox.onAdd = function(map) {
-    //divを作成
     this.ele = L.DomUtil.create("input", "searchbox");
-    //後で使うためにidを設定
     this.ele.id = "searchbox";
+    this.ele.type = "search";
+    this.ele.placeholder = "住所/建物名/県名";
     this.ele.onkeypress = function(e) {
         fetch(CancelledEvtList)
         .then(function(response) {
@@ -76,8 +76,8 @@ searchbox.onAdd = function(map) {
                 style: function(feature) {
                 return feature.properties && feature.properties.style;
                 },
-            filter: function(feature, layer) {   
-                return (feature.properties.name.match(searchbox.value));
+            filter: function(feature, layer) {  
+                return isSearchBoxMatchedFeatures(feature.properties, searchbox.value)
             },
             onEachFeature: onEachFeature
         }).addTo(map);
@@ -88,6 +88,25 @@ searchbox.onAdd = function(map) {
     return this.ele;
 };
 searchbox.addTo(map);
+
+function isSearchBoxMatchedFeatures(properties, value)
+{
+    if((properties.name.match(value))||(properties.address.match(value))||(properties.prefecture.match(value))){
+        return true;
+    }
+    /*
+    # JSONが重複表示のため一旦除外
+    else{
+        for(var i=0;i<properties.classification.length;i++)
+        {
+            if((properties.classification[i].match(value))||(properties.date[i].match(value))||(properties.event_name[i].match(value))){
+                return true;   
+            }     
+        }
+    }
+    */
+    return false;
+}
 
 function onEachFeature(feature, layer) {
     var popupContent =
