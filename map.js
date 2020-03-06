@@ -2,15 +2,14 @@ var NumAllEvtCount;
 var NumTodayEvtCount;
 var CancelledEvtList =
     "https://script.google.com/macros/s/AKfycbz51mpjVZ-XfHTti5Q-fFwzHaRaY_P1ZajawHXxnXnZsynYBq17/exec";
-
+var JSON_Origin = {};
+    
 var map = L.map("map").fitWorld();
 var geoJsonLayer;
 var geoJsonLayerGroup =  L.layerGroup([]);
 
 window.onload = function(){
     map.setView([35.71, 139.75], 14);
-    map.on("mousemove", onMapMousemove);
-    
     L.tileLayer(
         "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw", {
             maxZoom: 18,
@@ -27,86 +26,58 @@ window.onload = function(){
         return response.json();
     })
     .then(function(myJson) {
-        countReset()
-        geoJsonLayer = L.geoJSON(myJson, {
+        JSON_Origin = Object.create(myJson);
+        countReset();
+        var JSON_Merged = {};
+        JSON_Merged = Object.create(concatJSON(JSON_Origin));
+        geoJsonLayer = L.geoJSON(JSON_Merged, {
             style: function(feature) {
                 return feature.properties && feature.properties.style;
             },
             onEachFeature: onEachFeature
         }).addTo(map);
         geoJsonLayerGroup.addTo(map);
-        geoJsonLayerGroup.addTo(geoJsonLayer)
+        geoJsonLayerGroup.addTo(geoJsonLayer);
+        refelshInfo();
     });
-   
 }
 
-var latloninfo = L.control({ position: "topright" });
-latloninfo.onAdd = function(map) {
-    //divを作成
+var eventinfo = L.control({ position: "topright" });
+eventinfo.onAdd = function(map) {
     this.ele = L.DomUtil.create("div", "infostyle");
-    //後で使うためにidを設定
-    this.ele.id = "latlondiv";
-    //最初は非表示
-    this.ele.style.visibility = "hidden";
-    //div上のとmousemoveイベントがmapに連鎖しないように設定
-    this.ele.onmousemove = function(e) {
-        e.stopPropagation();
-    };
+    this.ele.id = "infodiv";
     return this.ele;
 };
-latloninfo.addTo(map);
+eventinfo.addTo(map);
 
 var searchbox = L.control({ position: "topright" });
 searchbox.onAdd = function(map) {
     this.ele = L.DomUtil.create("input", "searchbox");
     this.ele.id = "searchbox";
     this.ele.type = "search";
-    this.ele.placeholder = "住所/建物名/県名";
+    this.ele.placeholder = "住所/建物名/県名/月日(MM/DD)/ジャンル";
     this.ele.onkeypress = function(e) {
-        fetch(CancelledEvtList)
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(myJson) {
-            geoJsonLayer.clearLayers();
-		    geoJsonLayerGroup.removeLayer(geoJsonLayer);
-            countReset()
-            var searchbox = document.getElementById("searchbox");
-            L.geoJSON(myJson, {
-                style: function(feature) {
-                return feature.properties && feature.properties.style;
-                },
-            filter: function(feature, layer) {  
-                return isSearchBoxMatchedFeatures(feature.properties, searchbox.value)
+        var JSON_Filtered = {};
+        var JSON_Merged = {};
+        geoJsonLayer.clearLayers();
+        geoJsonLayerGroup.removeLayer(geoJsonLayer);
+        countReset();
+        var searchbox = document.getElementById("searchbox");
+        JSON_Filtered = Object.create(fillteringJSON(JSON_Origin, searchbox.value));
+        JSON_Merged   = Object.create(concatJSON(JSON_Filtered));
+        L.geoJSON(JSON_Merged, {
+            style: function(feature) {
+            return feature.properties && feature.properties.style;
             },
             onEachFeature: onEachFeature
         }).addTo(map);
         geoJsonLayerGroup.addTo(map);
-        geoJsonLayerGroup.addTo(geoJsonLayer)
-    });
-    }
+        geoJsonLayerGroup.addTo(geoJsonLayer);
+        refelshInfo();
+    };
     return this.ele;
 };
 searchbox.addTo(map);
-
-function isSearchBoxMatchedFeatures(properties, value)
-{
-    if((properties.name.match(value))||(properties.address.match(value))||(properties.prefecture.match(value))){
-        return true;
-    }
-    /*
-    # JSONが重複表示のため一旦除外
-    else{
-        for(var i=0;i<properties.classification.length;i++)
-        {
-            if((properties.classification[i].match(value))||(properties.date[i].match(value))||(properties.event_name[i].match(value))){
-                return true;   
-            }     
-        }
-    }
-    */
-    return false;
-}
 
 function onEachFeature(feature, layer) {
     var popupContent =
@@ -144,9 +115,9 @@ function onEachFeature(feature, layer) {
     layer.bindPopup(popupContent);
 }
 
-function onMapMousemove(e) {
+function refelshInfo() {
     //地図上を移動した際にdiv中に緯度経度を表示
-    var box = document.getElementById("latlondiv");
+    var box = document.getElementById("infodiv");
     var html =
         '<font color="red">中止・延期イベント総数   :' +
         NumAllEvtCount +
@@ -171,4 +142,73 @@ function countReset()
 {
     NumAllEvtCount = 0;
     NumTodayEvtCount = 0;
+}
+
+function fillteringJSON(JSON_arg, value)
+{
+    var JSON_res = {};
+    var JSON_ref = JSON_arg.features;
+    var cnt = 0;
+
+    JSON_res.type = "FeatureCollection";
+    JSON_res.features = [];
+    for(var i=0; i<JSON_ref.length; i++){
+        var target = 
+        JSON_ref[i].properties.name+ " "+
+        JSON_ref[i].properties.address +  " " + 
+        JSON_ref[i].properties.prefecture +  " " +
+        JSON_ref[i].properties.classification +  " " +
+        JSON_ref[i].properties.date +  " " +
+        JSON_ref[i].properties.event_name +  " " +
+        JSON_ref[i].properties.facility;
+        
+        if(target.match(value)){
+            JSON_res.features.push(JSON_ref[i]);
+            cnt++;
+        }
+    }
+    return JSON_res;
+}
+
+function concatJSON(JSON_arg)
+{
+    var JSON_res = {};
+    var JSON_ref = JSON_arg.features;
+    var cnt = 0;
+
+    JSON_res.type = "FeatureCollection";
+    JSON_res.features = [];
+    for(var i=0; i<JSON_ref.length; i++)
+    {
+        if(i>0 && (JSON_ref[i-1].properties.name == JSON_ref[i].properties.name) && (JSON_ref[i-1].properties.address == JSON_ref[i].properties.address)){
+            JSON_res.features[cnt-1].properties.classification.push(JSON_ref[i].properties.classification);
+            JSON_res.features[cnt-1].properties.date.push(JSON_ref[i].properties.date);
+            JSON_res.features[cnt-1].properties.event_name.push(JSON_ref[i].properties.event_name);
+            JSON_res.features[cnt-1].properties.facility.push(JSON_ref[i].properties.facility);
+            JSON_res.features[cnt-1].properties.URL.push(JSON_ref[i].properties.URL);
+        }
+        else
+        {
+            var obj = {};
+            obj.type = "Feature";
+            obj.properties = {};
+            obj.properties.name = JSON_ref[i].properties.name; 
+            obj.properties.address = JSON_ref[i].properties.address;
+            obj.properties.prefecture = JSON_ref[i].properties.prefecture;
+          
+            obj.geometry = {};
+            obj.geometry.type = "Point";
+            obj.geometry.coordinates = [];
+            obj.geometry.coordinates.push(JSON_ref[i].geometry.coordinates[0],JSON_ref[i].geometry.coordinates[1]);
+            
+            obj.properties.classification = [JSON_ref[i].properties.classification];
+            obj.properties.date = [JSON_ref[i].properties.date];
+            obj.properties.event_name = [JSON_ref[i].properties.event_name];
+            obj.properties.facility = [JSON_ref[i].properties.facility];
+            obj.properties.URL = [JSON_ref[i].properties.URL];
+            JSON_res.features.push(obj);
+            cnt++;
+        }
+    }
+    return JSON_res;
 }
