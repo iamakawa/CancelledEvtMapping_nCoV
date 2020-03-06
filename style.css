@@ -19,3 +19,7 @@ body {
     font-size: 15px;
     color: black;
 }
+
+.searchbox {
+    z-index: 1000;
+}

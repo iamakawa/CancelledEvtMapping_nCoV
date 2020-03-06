@@ -3,12 +3,12 @@ var NumTodayEvtCount;
 var CancelledEvtList =
     "https://script.google.com/macros/s/AKfycbz51mpjVZ-XfHTti5Q-fFwzHaRaY_P1ZajawHXxnXnZsynYBq17/exec";
 var JSON_Origin = {};
-    
+
 var map = L.map("map").fitWorld();
 var geoJsonLayer;
-var geoJsonLayerGroup =  L.layerGroup([]);
+var geoJsonLayerGroup = L.layerGroup([]);
 
-window.onload = function(){
+window.onload = function() {
     map.setView([35.71, 139.75], 14);
     L.tileLayer(
         "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw", {
@@ -22,24 +22,24 @@ window.onload = function(){
         }
     ).addTo(map);
     fetch(CancelledEvtList)
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(myJson) {
-        JSON_Origin = Object.create(myJson);
-        countReset();
-        var JSON_Merged = {};
-        JSON_Merged = Object.create(concatJSON(JSON_Origin));
-        geoJsonLayer = L.geoJSON(JSON_Merged, {
-            style: function(feature) {
-                return feature.properties && feature.properties.style;
-            },
-            onEachFeature: onEachFeature
-        }).addTo(map);
-        geoJsonLayerGroup.addTo(map);
-        geoJsonLayerGroup.addTo(geoJsonLayer);
-        refelshInfo();
-    });
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(myJson) {
+            JSON_Origin = Object.create(myJson);
+            countReset();
+            var JSON_Merged = {};
+            JSON_Merged = Object.create(concatJSON(JSON_Origin));
+            geoJsonLayer = L.geoJSON(JSON_Merged, {
+                style: function(feature) {
+                    return feature.properties && feature.properties.style;
+                },
+                onEachFeature: onEachFeature
+            }).addTo(map);
+            geoJsonLayerGroup.addTo(map);
+            geoJsonLayerGroup.addTo(geoJsonLayer);
+            refelshInfo();
+        });
 }
 
 var eventinfo = L.control({ position: "topright" });
@@ -64,10 +64,10 @@ searchbox.onAdd = function(map) {
         countReset();
         var searchbox = document.getElementById("searchbox");
         JSON_Filtered = Object.create(fillteringJSON(JSON_Origin, searchbox.value));
-        JSON_Merged   = Object.create(concatJSON(JSON_Filtered));
+        JSON_Merged = Object.create(concatJSON(JSON_Filtered));
         L.geoJSON(JSON_Merged, {
             style: function(feature) {
-            return feature.properties && feature.properties.style;
+                return feature.properties && feature.properties.style;
             },
             onEachFeature: onEachFeature
         }).addTo(map);
@@ -138,31 +138,29 @@ function getNowYMD() {
     return result;
 }
 
-function countReset()
-{
+function countReset() {
     NumAllEvtCount = 0;
     NumTodayEvtCount = 0;
 }
 
-function fillteringJSON(JSON_arg, value)
-{
+function fillteringJSON(JSON_arg, value) {
     var JSON_res = {};
     var JSON_ref = JSON_arg.features;
     var cnt = 0;
 
     JSON_res.type = "FeatureCollection";
     JSON_res.features = [];
-    for(var i=0; i<JSON_ref.length; i++){
-        var target = 
-        JSON_ref[i].properties.name+ " "+
-        JSON_ref[i].properties.address +  " " + 
-        JSON_ref[i].properties.prefecture +  " " +
-        JSON_ref[i].properties.classification +  " " +
-        JSON_ref[i].properties.date +  " " +
-        JSON_ref[i].properties.event_name +  " " +
-        JSON_ref[i].properties.facility;
-        
-        if(target.match(value)){
+    for (var i = 0; i < JSON_ref.length; i++) {
+        var target =
+            JSON_ref[i].properties.name + " " +
+            JSON_ref[i].properties.address + " " +
+            JSON_ref[i].properties.prefecture + " " +
+            JSON_ref[i].properties.classification + " " +
+            JSON_ref[i].properties.date + " " +
+            JSON_ref[i].properties.event_name + " " +
+            JSON_ref[i].properties.facility;
+
+        if (target.match(value)) {
             JSON_res.features.push(JSON_ref[i]);
             cnt++;
         }
@@ -170,37 +168,33 @@ function fillteringJSON(JSON_arg, value)
     return JSON_res;
 }
 
-function concatJSON(JSON_arg)
-{
+function concatJSON(JSON_arg) {
     var JSON_res = {};
     var JSON_ref = JSON_arg.features;
     var cnt = 0;
 
     JSON_res.type = "FeatureCollection";
     JSON_res.features = [];
-    for(var i=0; i<JSON_ref.length; i++)
-    {
-        if(i>0 && (JSON_ref[i-1].properties.name == JSON_ref[i].properties.name) && (JSON_ref[i-1].properties.address == JSON_ref[i].properties.address)){
-            JSON_res.features[cnt-1].properties.classification.push(JSON_ref[i].properties.classification);
-            JSON_res.features[cnt-1].properties.date.push(JSON_ref[i].properties.date);
-            JSON_res.features[cnt-1].properties.event_name.push(JSON_ref[i].properties.event_name);
-            JSON_res.features[cnt-1].properties.facility.push(JSON_ref[i].properties.facility);
-            JSON_res.features[cnt-1].properties.URL.push(JSON_ref[i].properties.URL);
-        }
-        else
-        {
+    for (var i = 0; i < JSON_ref.length; i++) {
+        if (i > 0 && (JSON_ref[i - 1].properties.name == JSON_ref[i].properties.name) && (JSON_ref[i - 1].properties.address == JSON_ref[i].properties.address)) {
+            JSON_res.features[cnt - 1].properties.classification.push(JSON_ref[i].properties.classification);
+            JSON_res.features[cnt - 1].properties.date.push(JSON_ref[i].properties.date);
+            JSON_res.features[cnt - 1].properties.event_name.push(JSON_ref[i].properties.event_name);
+            JSON_res.features[cnt - 1].properties.facility.push(JSON_ref[i].properties.facility);
+            JSON_res.features[cnt - 1].properties.URL.push(JSON_ref[i].properties.URL);
+        } else {
             var obj = {};
             obj.type = "Feature";
             obj.properties = {};
-            obj.properties.name = JSON_ref[i].properties.name; 
+            obj.properties.name = JSON_ref[i].properties.name;
             obj.properties.address = JSON_ref[i].properties.address;
             obj.properties.prefecture = JSON_ref[i].properties.prefecture;
-          
+
             obj.geometry = {};
             obj.geometry.type = "Point";
             obj.geometry.coordinates = [];
-            obj.geometry.coordinates.push(JSON_ref[i].geometry.coordinates[0],JSON_ref[i].geometry.coordinates[1]);
-            
+            obj.geometry.coordinates.push(JSON_ref[i].geometry.coordinates[0], JSON_ref[i].geometry.coordinates[1]);
+
             obj.properties.classification = [JSON_ref[i].properties.classification];
             obj.properties.date = [JSON_ref[i].properties.date];
             obj.properties.event_name = [JSON_ref[i].properties.event_name];
