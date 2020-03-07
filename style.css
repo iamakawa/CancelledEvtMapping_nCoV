@@ -20,6 +20,6 @@ body {
     color: black;
 }
 
-.search-container {
-    z-index: 1003;
+#boxcontainer {
+    font-size: 16px;
 }
