@@ -4,12 +4,11 @@ var CancelledEvtList =
     "https://script.google.com/macros/s/AKfycbz51mpjVZ-XfHTti5Q-fFwzHaRaY_P1ZajawHXxnXnZsynYBq17/exec";
 var JSON_Origin = {};
 
-var map = L.map("map").fitWorld();
+var map = L.map("map",{ zoomControl: false }).fitWorld();
 var geoJsonLayer;
-var geoJsonLayerGroup = L.layerGroup([]);
 
 window.onload = function() {
-    map.setView([35.71, 139.75], 14);
+    map.setView([35.71, 139.75], 6);
     L.tileLayer(
         "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw", {
             maxZoom: 18,
@@ -36,13 +35,15 @@ window.onload = function() {
                 },
                 onEachFeature: onEachFeature
             }).addTo(map);
-            geoJsonLayerGroup.addTo(map);
-            geoJsonLayerGroup.addTo(geoJsonLayer);
             refelshInfo();
         });
+        var searchboxControl=createSearchboxControl();
+        var control = new searchboxControl();
+        control._searchfunctionCallBack = execFilltering;
+        map.addControl(control);
 }
 
-var eventinfo = L.control({ position: "topright" });
+var eventinfo = L.control({ position: "bottomright" });
 eventinfo.onAdd = function(map) {
     this.ele = L.DomUtil.create("div", "infostyle");
     this.ele.id = "infodiv";
@@ -50,34 +51,26 @@ eventinfo.onAdd = function(map) {
 };
 eventinfo.addTo(map);
 
-var searchbox = L.control({ position: "topright" });
-searchbox.onAdd = function(map) {
-    this.ele = L.DomUtil.create("input", "searchbox");
-    this.ele.id = "searchbox";
-    this.ele.type = "search";
-    this.ele.placeholder = "住所/建物名/県名/月日(MM/DD)/ジャンル";
-    this.ele.onkeypress = function(e) {
-        var JSON_Filtered = {};
-        var JSON_Merged = {};
-        geoJsonLayer.clearLayers();
-        geoJsonLayerGroup.removeLayer(geoJsonLayer);
-        countReset();
-        var searchbox = document.getElementById("searchbox");
-        JSON_Filtered = Object.create(fillteringJSON(JSON_Origin, searchbox.value));
-        JSON_Merged = Object.create(concatJSON(JSON_Filtered));
-        L.geoJSON(JSON_Merged, {
-            style: function(feature) {
-                return feature.properties && feature.properties.style;
-            },
-            onEachFeature: onEachFeature
-        }).addTo(map);
-        geoJsonLayerGroup.addTo(map);
-        geoJsonLayerGroup.addTo(geoJsonLayer);
-        refelshInfo();
-    };
-    return this.ele;
+var zoom = L.control.zoom({ position: 'bottomright' });
+zoom.addTo(map);
+
+function execFilltering(e){
+    var JSON_Filtered = {};
+    var JSON_Merged = {};
+    geoJsonLayer.clearLayers();
+    countReset();
+    var searchbox = document.querySelector('input');
+    JSON_Filtered = Object.create(fillteringJSON(JSON_Origin, searchbox.value));
+    JSON_Merged = Object.create(concatJSON(JSON_Filtered));
+    geoJsonLayer = L.geoJSON(JSON_Merged, {
+        style: function(feature) {
+            return feature.properties && feature.properties.style;
+        },
+        onEachFeature: onEachFeature
+    }).addTo(map);
+    refelshInfo();
 };
-searchbox.addTo(map);
+
 
 function onEachFeature(feature, layer) {
     var popupContent =

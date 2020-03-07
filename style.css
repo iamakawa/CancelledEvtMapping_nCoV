@@ -20,6 +20,6 @@ body {
     color: black;
 }
 
-.searchbox {
-    z-index: 1000;
+.search-container {
+    z-index: 1003;
 }
