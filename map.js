@@ -4,10 +4,12 @@ var CancelledEvtList =
     "https://script.google.com/macros/s/AKfycbz51mpjVZ-XfHTti5Q-fFwzHaRaY_P1ZajawHXxnXnZsynYBq17/exec";
 var JSON_Origin = {};
 
-var map = L.map("map",{ zoomControl: false }).fitWorld();
+var map = L.map("map", { zoomControl: false }).fitWorld();
 var geoJsonLayer;
 
 window.onload = function() {
+    var loading = document.getElementById("loading");
+    loading.classList.remove("hidden");
     map.setView([35.71, 139.75], 6);
     L.tileLayer(
         "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw", {
@@ -36,12 +38,13 @@ window.onload = function() {
                 onEachFeature: onEachFeature
             }).addTo(map);
             refelshInfo();
+            loading.classList.add("hidden");
         });
-        var searchboxControl=createSearchboxControl();
-        var control = new searchboxControl();
-        control._searchfunctionCallBack = execFilltering;
-        map.addControl(control);
-}
+    var searchboxControl = createSearchboxControl();
+    var control = new searchboxControl();
+    control._searchfunctionCallBack = execFilltering;
+    map.addControl(control);
+};
 
 var eventinfo = L.control({ position: "bottomright" });
 eventinfo.onAdd = function(map) {
@@ -51,15 +54,15 @@ eventinfo.onAdd = function(map) {
 };
 eventinfo.addTo(map);
 
-var zoom = L.control.zoom({ position: 'bottomright' });
+var zoom = L.control.zoom({ position: "bottomright" });
 zoom.addTo(map);
 
-function execFilltering(e){
+function execFilltering(e) {
     var JSON_Filtered = {};
     var JSON_Merged = {};
     geoJsonLayer.clearLayers();
     countReset();
-    var searchbox = document.querySelector('input');
+    var searchbox = document.querySelector("input");
     JSON_Filtered = Object.create(fillteringJSON(JSON_Origin, searchbox.value));
     JSON_Merged = Object.create(concatJSON(JSON_Filtered));
     geoJsonLayer = L.geoJSON(JSON_Merged, {
@@ -69,8 +72,7 @@ function execFilltering(e){
         onEachFeature: onEachFeature
     }).addTo(map);
     refelshInfo();
-};
-
+}
 
 function onEachFeature(feature, layer) {
     var popupContent =
@@ -145,12 +147,18 @@ function fillteringJSON(JSON_arg, value) {
     JSON_res.features = [];
     for (var i = 0; i < JSON_ref.length; i++) {
         var target =
-            JSON_ref[i].properties.name + " " +
-            JSON_ref[i].properties.address + " " +
-            JSON_ref[i].properties.prefecture + " " +
-            JSON_ref[i].properties.classification + " " +
-            JSON_ref[i].properties.date + " " +
-            JSON_ref[i].properties.event_name + " " +
+            JSON_ref[i].properties.name +
+            " " +
+            JSON_ref[i].properties.address +
+            " " +
+            JSON_ref[i].properties.prefecture +
+            " " +
+            JSON_ref[i].properties.classification +
+            " " +
+            JSON_ref[i].properties.date +
+            " " +
+            JSON_ref[i].properties.event_name +
+            " " +
             JSON_ref[i].properties.facility;
 
         if (target.match(value)) {
@@ -169,12 +177,26 @@ function concatJSON(JSON_arg) {
     JSON_res.type = "FeatureCollection";
     JSON_res.features = [];
     for (var i = 0; i < JSON_ref.length; i++) {
-        if (i > 0 && (JSON_ref[i - 1].properties.name == JSON_ref[i].properties.name) && (JSON_ref[i - 1].properties.address == JSON_ref[i].properties.address)) {
-            JSON_res.features[cnt - 1].properties.classification.push(JSON_ref[i].properties.classification);
-            JSON_res.features[cnt - 1].properties.date.push(JSON_ref[i].properties.date);
-            JSON_res.features[cnt - 1].properties.event_name.push(JSON_ref[i].properties.event_name);
-            JSON_res.features[cnt - 1].properties.facility.push(JSON_ref[i].properties.facility);
-            JSON_res.features[cnt - 1].properties.URL.push(JSON_ref[i].properties.URL);
+        if (
+            i > 0 &&
+            JSON_ref[i - 1].properties.name == JSON_ref[i].properties.name &&
+            JSON_ref[i - 1].properties.address == JSON_ref[i].properties.address
+        ) {
+            JSON_res.features[cnt - 1].properties.classification.push(
+                JSON_ref[i].properties.classification
+            );
+            JSON_res.features[cnt - 1].properties.date.push(
+                JSON_ref[i].properties.date
+            );
+            JSON_res.features[cnt - 1].properties.event_name.push(
+                JSON_ref[i].properties.event_name
+            );
+            JSON_res.features[cnt - 1].properties.facility.push(
+                JSON_ref[i].properties.facility
+            );
+            JSON_res.features[cnt - 1].properties.URL.push(
+                JSON_ref[i].properties.URL
+            );
         } else {
             var obj = {};
             obj.type = "Feature";
@@ -186,7 +208,10 @@ function concatJSON(JSON_arg) {
             obj.geometry = {};
             obj.geometry.type = "Point";
             obj.geometry.coordinates = [];
-            obj.geometry.coordinates.push(JSON_ref[i].geometry.coordinates[0], JSON_ref[i].geometry.coordinates[1]);
+            obj.geometry.coordinates.push(
+                JSON_ref[i].geometry.coordinates[0],
+                JSON_ref[i].geometry.coordinates[1]
+            );
 
             obj.properties.classification = [JSON_ref[i].properties.classification];
             obj.properties.date = [JSON_ref[i].properties.date];
